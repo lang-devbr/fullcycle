@@ -19,6 +19,6 @@ func main() {
 	}
 
 	if arg[0] == "client" {
-		client.GetCotacao()
+		client.ProcessarCotacao()
 	}
 }

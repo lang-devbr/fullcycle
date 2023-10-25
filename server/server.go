@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/lang-devbr/fullcycle/cotacao"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -18,7 +19,7 @@ const (
 
 func Start() {
 	http.HandleFunc("/cotacao", getCotacaoHandler)
-	fmt.Printf("App is running at port %d...\n", port)
+	fmt.Printf("Server is running at port %d...\n", port)
 	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 
@@ -47,13 +48,13 @@ func getCotacaoHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(cotacao)
 }
 
-func insert(ctx context.Context, c *Cotacao) error {
+func insert(ctx context.Context, c *cotacao.Cotacao) error {
 	db, err := gorm.Open(sqlite.Open("cotacao.db"), &gorm.Config{})
 	if err != nil {
 		return err
 	}
 
-	err = db.AutoMigrate(&Cotacao{})
+	err = db.AutoMigrate(&cotacao.Cotacao{})
 	if err != nil {
 		return err
 	}
@@ -69,26 +70,8 @@ func insert(ctx context.Context, c *Cotacao) error {
 	return nil
 }
 
-type Cotacao struct {
-	USDBRL `json:"USDBRL"`
-}
-
-type USDBRL struct {
-	Code       string `json:"code"`
-	Codein     string `json:"codein"`
-	Name       string `json:"name"`
-	High       string `json:"high"`
-	Low        string `json:"low"`
-	VarBid     string `json:"varBid"`
-	PctChange  string `json:"pctChange"`
-	Bid        string `json:"bid"`
-	Ask        string `json:"ask"`
-	Timestamp  string `json:"timestamp"`
-	CreateDate string `json:"create_date"`
-}
-
-func Get(ctx context.Context) (*Cotacao, error) {
-	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*500)
+func Get(ctx context.Context) (*cotacao.Cotacao, error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*200)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://economia.awesomeapi.com.br/json/last/USD-BRL", nil)
@@ -107,7 +90,7 @@ func Get(ctx context.Context) (*Cotacao, error) {
 		return nil, err
 	}
 
-	var cotacao Cotacao
+	var cotacao cotacao.Cotacao
 	err = json.Unmarshal(body, &cotacao)
 	if err != nil {
 		return nil, err
